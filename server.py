@@ -1,0 +1,102 @@
+import json
+from unicodedata import category
+from unittest import result
+from flask import Flask, abort
+from mock_data import catalog
+
+
+app = Flask("Server")
+
+
+@app.route("/")
+def home():
+    return "hello from flask"
+
+
+@app.route("/me")
+def about_me():
+    return "April Carr"
+
+#####################################    API Endpoints ALWAYS Return JSONS ######################################################
+
+@app.route("/api/catalog", methods=["get"])
+def get_catalog():
+    return json.dumps(catalog)
+
+@app.route("/api/catalog", methods=["post"])
+def save_product():
+    pass
+
+
+
+
+#### get /api/catalog/count
+
+@app.route("/api/catalog/count", methods=["get"])
+def products():
+    count= (f"There are: {len(catalog)}") 
+    
+    return json.dumps(count)
+
+#get /api/catalog/total sum of all product prices
+
+@app.route("/api/catalog/total", methods=["get"])
+def total_price():
+    
+    total = 0
+    
+    for product in catalog:
+        total += product["price"]
+    
+    return json.dumps(total) 
+
+#get /api/product/id
+
+@app.route("/api/product/<id>")
+def get_by_id(id):
+    for product in catalog:
+        if product["_id"] == id:
+            return json.dumps(product)
+        
+    return abort(404, "No Product with that ID")
+
+
+@app.route("/api/products/cheapest", methods=["get"])
+def cheapest_product():
+    
+    products = catalog[0]
+
+    for prices in catalog:
+        if prices["price"] < products["price"]:
+            products = prices
+            
+    return json.dumps(products)    
+
+#get /api/categories
+
+@app.route("/api/categories", methods=["get"])
+def categories():
+    uniquecategory = []
+    for prod in catalog:
+        category = prod["category"]
+        if not category in uniquecategory:
+            uniquecategory.append(category)
+            
+    return json.dumps(uniquecategory)        
+
+#
+# ticket 2345
+#create an endpoint that allow the client to get all the products for a specified category
+
+@app.route("/api/catalog/<category>")
+def prods_by_category(category):
+    result = []
+    for product in catalog:
+        if product["category"] == category:
+            result.append(product)
+            
+    return json.dumps(result)
+        
+    
+
+app.run(debug=True)
